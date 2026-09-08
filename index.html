@@ -17,6 +17,7 @@
     .stepper{display:flex;align-items:center;flex:0 0 auto;gap:4px;padding:4px;border:1px solid var(--line);border-radius:999px;background:#0003}.stepper button,.check{display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:50%;color:#fff;cursor:pointer}.stepper button{background:#ffffff12}.stepper button:first-child{background:transparent;color:#98a29a}.stepper button:disabled{opacity:.25;cursor:default}.count{min-width:20px;text-align:center;font-size:14px;font-weight:900}.done .count{color:var(--lime)}.check{width:30px;height:30px;border:1px solid #ffffff33;background:#ffffff08}.check.on{border-color:var(--lime);background:var(--lime);color:#10140e}.note{display:flex;gap:11px;margin-top:18px;padding:14px 16px;border:1px solid #ffffff0f;border-radius:18px;background:#0003}.note b{display:block;font-size:14px}.note p{margin:5px 0 0;color:#7f8a82;font-size:12px;line-height:1.6}.save{color:var(--lime)}
     @media(max-width:400px){.hero-content{padding:17px}.ring{flex-basis:92px;width:92px;height:92px}.hero-copy{max-width:62%}.protein{font-size:38px}.row{gap:9px;padding:11px}.food-icon{flex-basis:40px;width:40px;height:40px}.food-info p{font-size:12px}}
   </style>
+  <link rel="stylesheet" href="./diary.css?v=2">
 </head>
 <body>
   <main class="app">
@@ -24,31 +25,7 @@
     <section class="hero-wrap"><div class="hero"><div class="food-art" aria-hidden="true"><span>🥛</span><span>🥚</span><span>🍞</span><span>🍗</span></div><div class="shade"></div><div class="hero-content"><div class="hero-copy"><div class="date"><i class="dot"></i><span id="date">今天</span></div><p class="label">今日估算蛋白质</p><p class="protein"><span id="protein">0</span><small>g</small></p><p class="goal-copy" id="goal">距 100g 还差 100g</p></div><div class="ring" id="ring"><div class="ring-inner"><div><strong id="percent">0%</strong><small>目标 100–110g</small></div></div></div></div></div></section>
     <section class="section"><div class="section-head"><div><h2>今日清单</h2><p class="hint">点按数量，完成后自动保存</p></div><div class="summary"><span><em id="done">0</em> / 7 项</span><div class="bar"><i id="bar"></i></div></div></div><div class="list" id="list"></div><div class="note"><span class="save">▣</span><div><b>当天记录已保存在这台设备</b><p>每天自动切换新清单；蛋白质为常见食材估算值，实际请以包装营养表和食堂份量为准。</p></div></div></section>
   </main>
-  <script>
-    const foods=[
-      {id:'milk',name:'脱脂牛奶',amount:'2 瓶',max:2,required:2,protein:8,unit:'瓶',icon:'🥛',tone:'#6bb5ff20'},
-      {id:'bread',name:'全麦面包',amount:'2 片',max:2,required:2,protein:4,unit:'片',icon:'🍞',tone:'#e8ac521f'},
-      {id:'oats',name:'燕麦',amount:'80 ml',max:1,required:1,protein:4,unit:'份',icon:'🥣',tone:'#d1b88820'},
-      {id:'sausage',name:'鸡胸肉肠',amount:'100g × 1 根',max:1,required:1,protein:15,unit:'根',icon:'🌭',tone:'#f2824b20'},
-      {id:'chicken',name:'鸡胸肉',amount:'50g × 1 包',max:1,required:1,protein:11,unit:'包',icon:'🍗',tone:'#ec7a7020'},
-      {id:'eggs',name:'鸡蛋',amount:'2 个',max:2,required:2,protein:6.5,unit:'个',icon:'🥚',tone:'#f5cf5320'},
-      {id:'canteen',name:'食堂肉菜',amount:'1～2 顿',max:2,required:1,protein:20,unit:'顿',icon:'🍲',tone:'#8ed36520'}
-    ];
-    const empty=()=>Object.fromEntries(foods.map(x=>[x.id,0]));let counts=empty();
-    const key=()=>{const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const g=t=>p.find(x=>x.type===t).value;return `${g('year')}-${g('month')}-${g('day')}`};
-    const label=()=>new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'long',day:'numeric',weekday:'short'}).format(new Date());
-    let today=key();try{counts={...empty(),...JSON.parse(localStorage.getItem('protein-checkin:'+today)||'{}')}}catch{}
-    function save(){localStorage.setItem('protein-checkin:'+today,JSON.stringify(counts))}
-    function setCount(id,n){const f=foods.find(x=>x.id===id);counts[id]=Math.max(0,Math.min(f.max,n));save();render()}
-    function render(){
-      document.getElementById('date').textContent=label();let protein=foods.reduce((s,f)=>s+counts[f.id]*f.protein,0);let complete=foods.filter(f=>counts[f.id]>=f.required).length;let pct=Math.min(100,Math.round(protein));
-      document.getElementById('protein').textContent=Number.isInteger(protein)?protein:protein.toFixed(1);document.getElementById('percent').textContent=pct+'%';document.getElementById('ring').style.setProperty('--p',pct+'%');document.getElementById('done').textContent=complete;document.getElementById('bar').style.width=Math.round(complete/foods.length*100)+'%';
-      const goal=document.getElementById('goal');goal.textContent=protein>=100&&protein<=110?'目标已达成，很稳。':`距 100g 还差 ${Math.max(0,100-protein)}g`;goal.classList.toggle('good',protein>=100&&protein<=110);
-      document.getElementById('list').innerHTML=foods.map(f=>{const n=counts[f.id],done=n>=f.required,controls=f.max===1?`<button class="check ${n?'on':''}" aria-label="${n?'取消':'完成'}${f.name}" onclick="setCount('${f.id}',${n?0:1})">${n?'✓':''}</button>`:`<div class="stepper"><button ${n===0?'disabled':''} aria-label="减少${f.name}数量" onclick="setCount('${f.id}',${n-1})">−</button><span class="count">${n}</span><button ${n===f.max?'disabled':''} aria-label="增加${f.name}数量" onclick="setCount('${f.id}',${n+1})">${n===f.max?'✓':'+'}</button></div>`;return `<article class="row ${done?'done':''}"><div class="food-icon" style="background:${f.tone}">${f.icon}</div><div class="food-info"><h3>${f.name}${f.id==='canteen'?'<span class="tag">1 顿起</span>':''}</h3><p>${f.amount} · 约 ${f.protein}g / ${f.unit}</p></div>${controls}</article>`}).join('');
-    }
-    document.getElementById('reset').onclick=()=>{if(confirm('重置今天的全部打卡记录？')){counts=empty();save();render()}};
-    setInterval(()=>{const now=key();if(now!==today){today=now;try{counts={...empty(),...JSON.parse(localStorage.getItem('protein-checkin:'+today)||'{}')}}catch{counts=empty()}render()}},30000);render();
-  </script>
+  <script src="./data.js?v=2" defer></script>
+  <script src="./app.js?v=2" defer></script>
 </body>
 </html>
-

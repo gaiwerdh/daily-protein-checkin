@@ -1,0 +1,5 @@
+// Development-only static server, also tests a GitHub Pages project subpath.
+const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
+const fixture=process.argv.includes('--fixture'),port=fixture?8767:8766;
+const files={'index.html':'text/html; charset=utf-8','data.js':'text/javascript; charset=utf-8','app.js':'text/javascript; charset=utf-8','diary.css':'text/css; charset=utf-8',...(fixture?{'tests/fixture.js':'text/javascript; charset=utf-8'}:{})};
+http.createServer((req,res)=>{const pathname=new URL(req.url,'http://localhost').pathname;const name=pathname.replace(/^\/daily-protein-checkin\//,'').replace(/^\//,'')||'index.html';if(!files[name]){res.writeHead(404);res.end();return;}res.writeHead(200,{'Content-Type':files[name],'Cache-Control':'no-store'});let body=fs.readFileSync(path.join(__dirname,name));if(fixture&&name==='index.html')body=body.toString().replace('<head>','<head><script src="./tests/fixture.js"></script>');res.end(body);}).listen(port,'127.0.0.1',()=>console.log(`http://127.0.0.1:${port}/daily-protein-checkin/`));
